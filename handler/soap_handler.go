@@ -45,6 +45,12 @@ func (h *UserSOAPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch opName {
 	case "GetUserByID":
 		responseEnv = h.handleGetUserByID(body)
+	case "CreateUser":
+		responseEnv = h.handleCreateUser(body)
+	case "UpdateUser":
+		responseEnv = h.handleUpdateUser(body)
+	case "DeleteUser":
+		responseEnv = h.handleDeleteUser(body)
 	default:
 		h.writeSOAPFault(w, "MustUnderstand", fmt.Sprintf("Unknown operation: %s", opName))
 		return
@@ -91,6 +97,75 @@ func (h *UserSOAPHandler) handleGetUserByID(body []byte) model.SoapEnvelope {
 	response, err := h.UserService.HandleGetUserByID(requestEnv.Body.Request)
 	if err != nil {
 		log.Printf("Service error for GetUserByID: %v", err)
+		return model.NewSoapFault("Server", err.Error())
+	}
+
+	return model.NewSoapEnvelope(response)
+}
+
+func (h *UserSOAPHandler) handleCreateUser(body []byte) model.SoapEnvelope {
+	var requestEnv struct {
+		XMLName xml.Name `xml:"http://schemas.xmlsoap.org/soap/envelope/ Envelope"`
+		Body    struct {
+			XMLName xml.Name                `xml:"http://schemas.xmlsoap.org/soap/envelope/ Body"`
+			Request model.CreateUserRequest `xml:"urn:user-service CreateUser"`
+		}
+	}
+
+	if err := xml.Unmarshal(body, &requestEnv); err != nil {
+		log.Printf("Error unmarshalling CreateUser request: %v", err)
+		return model.NewSoapFault("Client", "Invalid CreateUser Request Structure")
+	}
+
+	response, err := h.UserService.HandleCreateUser(requestEnv.Body.Request)
+	if err != nil {
+		log.Printf("Service error for CreateUser: %v", err)
+		return model.NewSoapFault("Server", err.Error())
+	}
+
+	return model.NewSoapEnvelope(response)
+}
+
+func (h *UserSOAPHandler) handleUpdateUser(body []byte) model.SoapEnvelope {
+	var requestEnv struct {
+		XMLName xml.Name `xml:"http://schemas.xmlsoap.org/soap/envelope/ Envelope"`
+		Body    struct {
+			XMLName xml.Name                `xml:"http://schemas.xmlsoap.org/soap/envelope/ Body"`
+			Request model.UpdateUserRequest `xml:"urn:user-service UpdateUser"`
+		}
+	}
+
+	if err := xml.Unmarshal(body, &requestEnv); err != nil {
+		log.Printf("Error unmarshalling UpdateUser request: %v", err)
+		return model.NewSoapFault("Client", "Invalid UpdateUser Request Structure")
+	}
+
+	response, err := h.UserService.HandleUpdateUser(requestEnv.Body.Request)
+	if err != nil {
+		log.Printf("Service error for UpdateUser: %v", err)
+		return model.NewSoapFault("Server", err.Error())
+	}
+
+	return model.NewSoapEnvelope(response)
+}
+
+func (h *UserSOAPHandler) handleDeleteUser(body []byte) model.SoapEnvelope {
+	var requestEnv struct {
+		XMLName xml.Name `xml:"http://schemas.xmlsoap.org/soap/envelope/ Envelope"`
+		Body    struct {
+			XMLName xml.Name                `xml:"http://schemas.xmlsoap.org/soap/envelope/ Body"`
+			Request model.DeleteUserRequest `xml:"urn:user-service DeleteUser"`
+		}
+	}
+
+	if err := xml.Unmarshal(body, &requestEnv); err != nil {
+		log.Printf("Error unmarshalling DeleteUser request: %v", err)
+		return model.NewSoapFault("Client", "Invalid DeleteUser Request Structure")
+	}
+
+	response, err := h.UserService.HandleDeleteUser(requestEnv.Body.Request)
+	if err != nil {
+		log.Printf("Service error for DeleteUser: %v", err)
 		return model.NewSoapFault("Server", err.Error())
 	}
 
