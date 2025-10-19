@@ -53,3 +53,22 @@ func SaveUser(user *model.User) error {
 		return bucket.Put(key, buf)
 	})
 }
+
+func DeleteUser(id int) error {
+	userIDStr := strconv.Itoa(id)
+
+	return DB.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(UserBucket)
+		if bucket == nil {
+			return fmt.Errorf("bucket %s not found", UserBucket)
+		}
+
+		// Check if user exists
+		if bucket.Get([]byte(userIDStr)) == nil {
+			return fmt.Errorf("user with ID %d not found", id)
+		}
+
+		// Delete the user
+		return bucket.Delete([]byte(userIDStr))
+	})
+}

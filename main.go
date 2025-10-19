@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	DBPath = "user.db"
-	Port   = ":8180"
+	DBPath   = "user.db"
+	HTTPPort = ":8180"
+	UDPPort  = ":8181"
 )
 
 func main() {
@@ -36,15 +37,28 @@ func main() {
 
 	// 3. Setup Layers
 	userService := &service.UserService{}
-	soapHandler := &handler.UserSOAPHandler{
+
+	// HTTP SOAP Handler
+	httpSoapHandler := &handler.UserSOAPHandler{
 		UserService: userService,
 	}
 
-	// 4. Setup HTTP Server
-	http.Handle("/soap/user", soapHandler)
+	// UDP SOAP Handler
+	udpSoapHandler := handler.NewUDPSOAPHandler(userService)
 
-	log.Printf("SOAP Server starting on http://localhost%s/soap/user", Port)
-	if err := http.ListenAndServe(Port, nil); err != nil {
-		log.Fatalf("Server failed: %v", err)
+	// 4. Start UDP SOAP Server
+	if err := udpSoapHandler.StartUDPServer("localhost" + UDPPort); err != nil {
+		log.Fatalf("Failed to start UDP SOAP server: %v", err)
+	}
+	defer udpSoapHandler.Stop()
+
+	// 5. Setup HTTP Server
+	http.Handle("/soap/user", httpSoapHandler)
+
+	log.Printf("HTTP SOAP Server starting on http://localhost%s/soap/user", HTTPPort)
+	log.Printf("UDP SOAP Server listening on localhost%s", UDPPort)
+
+	if err := http.ListenAndServe(HTTPPort, nil); err != nil {
+		log.Fatalf("HTTP Server failed: %v", err)
 	}
 }
